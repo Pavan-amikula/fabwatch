@@ -4,6 +4,10 @@
 
 **Project:** FabWatch — Semiconductor Manufacturing Quality Intelligence
 
+**Repository:** https://github.com/Pavan-amikula/fabwatch
+
+**Demonstration:** https://github.com/Pavan-amikula/fabwatch/blob/main/docs/media/fabwatch-demo.mp4
+
 **Type:** Independent engineering ML portfolio project. Real public historical data; working local application and ingestion API; no factory deployment.
 
 **Stack:** Python, pandas, NumPy, SciPy, scikit-learn, SQL/SQLite, FastAPI, Pydantic, HTML/CSS/JavaScript, SVG charts, pytest, GitHub Actions, Docker configuration. CSV statistical-tool handoff and example Power Query/DAX are included. No JMP, Minitab, or Power BI execution has been verified.

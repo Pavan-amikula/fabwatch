@@ -35,6 +35,10 @@ Threshold minimizes `10 * missed_failures + false_alerts` on policy data, with l
 
 The classifier is **not recommended for autonomous failure decisions**. Selecting a lower threshold after viewing test labels would be test tuning; this project preserves the original operating point. Model evidence is reported separately from operational gates and reference excursions.
 
+## Exploratory follow-up
+
+After the original test was inspected, seven additional candidates were declared in `scripts/challenger_study.py`: three RBF SVM feature configurations, full-signal Extra Trees and random forest, and two logistic feature configurations. Fitting and selection still use only the original train/policy partitions. The full-signal random forest had the highest policy AP (0.06685); its cost threshold was also selected on policy data. On the reused test, AP was 0.11061, ROC AUC 0.66271, with four detected failures, thirty false reviews, and thirteen missed failures. These figures are exploratory because the test was already inspected. The original serving artifact, threshold, and metrics were not overwritten. No model promotion or claim of validated savings follows.
+
 ## Operational safeguards and separate signals
 
 - Missingness gate: abstain when the missing-sensor fraction exceeds max(15%, training 99th percentile). The score remains visible for analysis but is not used to grant a quality release. There are three such holds in the complete held-out sequence.

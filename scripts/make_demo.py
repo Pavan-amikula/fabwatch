@@ -55,7 +55,8 @@ def main():
         ('handoff.png','05 / Assign ownership and preserve evidence','Actual saved demo note and status change; accountable follow-up recorded in the audit trail.',6),
         ('quality.png','06 / Data contracts and process monitoring','Signal completeness + exploratory EWMA. No physical root causes or specification limits invented.',6),
         ('model-evidence.png','07 / Inspect model evidence and limitations','The original chronological model is weak; risk alerts remain disabled under its selected policy.',7),
-        ('entity-evidence.png','08 / Inspect an entity and its audit history','Reference deviations support investigation; they do not establish causal attribution.',6)]:
+        ('entity-evidence.png','08 / Inspect an entity and its audit history','Reference deviations support investigation; they do not establish causal attribution.',6),
+        ('entity-audit.png','09 / Trace the engineering handoff','The saved owner, status, and note remain inspectable alongside the original scoring event.',5)]:
         shots.append((frame(file,title,caption),seconds))
     shots.append((card('Reproducible evidence, accountable decisions',[
         '29 automated tests / 314 entity-evidence checks',
