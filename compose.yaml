@@ -1,0 +1,9 @@
+services:
+  fabwatch:
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - fabwatch-runtime:/app/runtime
+volumes:
+  fabwatch-runtime:

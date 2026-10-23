@@ -1,0 +1,1 @@
+"""FabWatch manufacturing quality intelligence."""

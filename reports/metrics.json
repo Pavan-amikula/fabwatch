@@ -1,0 +1,131 @@
+{
+  "dataset": {
+    "rows": 1567,
+    "sensors": 590,
+    "fails": 104,
+    "missing_fraction": 0.04537548808583821,
+    "constant_train_sensors": 122
+  },
+  "splits": {
+    "train": {
+      "n": 783,
+      "fails": 67,
+      "start": "2008-07-19 11:55:00",
+      "end": "2008-09-11 07:43:00"
+    },
+    "calibration": {
+      "n": 235,
+      "fails": 9,
+      "start": "2008-09-11 08:06:00",
+      "end": "2008-09-22 21:31:00"
+    },
+    "policy": {
+      "n": 235,
+      "fails": 11,
+      "start": "2008-09-22 22:15:00",
+      "end": "2008-10-02 19:25:00"
+    },
+    "test": {
+      "n": 314,
+      "fails": 17,
+      "start": "2008-10-02 20:54:00",
+      "end": "2008-10-17 06:07:00"
+    }
+  },
+  "candidates": [
+    {
+      "name": "logistic",
+      "policy_ap": 0.05266841999169722,
+      "policy_brier": 0.044709062730456245,
+      "calibrated": true
+    },
+    {
+      "name": "extra_trees",
+      "policy_ap": 0.06015133516354186,
+      "policy_brier": 0.044646167479141775,
+      "calibrated": true
+    },
+    {
+      "name": "random_forest",
+      "policy_ap": 0.056744399248688904,
+      "policy_brier": 0.044776178317205206,
+      "calibrated": true
+    },
+    {
+      "name": "hist_boost",
+      "policy_ap": 0.06176545709649782,
+      "policy_brier": 0.04460278271751775,
+      "calibrated": true
+    }
+  ],
+  "winner": {
+    "name": "hist_boost",
+    "policy_ap": 0.06176545709649782,
+    "policy_brier": 0.04460278271751775,
+    "calibrated": true
+  },
+  "threshold": 1.000001,
+  "test": {
+    "ap": 0.06358936662353638,
+    "roc_auc": 0.5123786888492772,
+    "brier": 0.05181803940549334,
+    "recall": 0.0,
+    "precision": 0.0,
+    "alert_rate": 0.0,
+    "cost_per_100": 54.140127388535035,
+    "tn": 297,
+    "fp": 0,
+    "fn": 17,
+    "tp": 0
+  },
+  "all_pass": {
+    "ap": 0.054140127388535034,
+    "roc_auc": 0.5,
+    "brier": 0.052196705722414985,
+    "recall": 0.0,
+    "precision": 0.0,
+    "alert_rate": 0.0,
+    "cost_per_100": 54.140127388535035,
+    "tn": 297,
+    "fp": 0,
+    "fn": 17,
+    "tp": 0
+  },
+  "isolation_forest_test_ap": 0.052925662472769495,
+  "bootstrap_95_ci": {
+    "ap": [
+      0.023561603668154782,
+      0.1210865338557698
+    ],
+    "recall": [
+      0.0,
+      0.0
+    ],
+    "precision": [
+      0.0,
+      0.0
+    ],
+    "cost_per_100": [
+      18.87989525056541,
+      87.21598711642653
+    ],
+    "cost_saving_vs_pass": [
+      0.0,
+      0.0
+    ]
+  },
+  "bootstrap_valid": 500,
+  "cost_assumption": {
+    "missed_failure": 10,
+    "false_alert": 1,
+    "currency": "hypothetical units"
+  },
+  "latency_ms": {
+    "p50": 4.953649997332832,
+    "p95": 5.156164997970336,
+    "n": 100,
+    "scope": "warm single-row pandas + sklearn pipeline; excludes HTTP, SQL and explanation"
+  },
+  "model_sha256": "a96a672fb8752a27fc7e4a60c8e7391e4878c0ab89fff528167410e72320a6ea",
+  "seed": 47
+}

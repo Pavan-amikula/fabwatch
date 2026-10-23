@@ -1,0 +1,51 @@
+{
+  "status": "Exploratory challenger; final test previously inspected; no promotion",
+  "protocol": "7 declared additional candidates fitted on original training only; selection and threshold on original policy only",
+  "candidates": [
+    {
+      "name": "svm_rbf_20",
+      "policy_ap": 0.06600480193187959
+    },
+    {
+      "name": "svm_rbf_60",
+      "policy_ap": 0.05236803250561064
+    },
+    {
+      "name": "svm_rbf_all",
+      "policy_ap": 0.04341589237164331
+    },
+    {
+      "name": "extra_trees_all",
+      "policy_ap": 0.056289632667030735
+    },
+    {
+      "name": "random_forest_all",
+      "policy_ap": 0.06684719265061334
+    },
+    {
+      "name": "logistic_10",
+      "policy_ap": 0.06303324528309082
+    },
+    {
+      "name": "logistic_all",
+      "policy_ap": 0.04162728674112241
+    }
+  ],
+  "selected": {
+    "name": "random_forest_all",
+    "policy_ap": 0.06684719265061334
+  },
+  "threshold": 0.12805367454715136,
+  "reused_test": {
+    "ap": 0.11060611651982338,
+    "roc_auc": 0.6627054862348979,
+    "tn": 267,
+    "fp": 30,
+    "fn": 13,
+    "tp": 4,
+    "recall": 0.23529411764705882,
+    "precision": 0.11764705882352941,
+    "cost_per_100": 50.955414012738856
+  },
+  "interpretation": "New future/site validation required; original frozen serving model remains unchanged."
+}

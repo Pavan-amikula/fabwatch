@@ -1,0 +1,18 @@
+{
+  "python": "3.13.4",
+  "sklearn": "1.7.0",
+  "platform": "Windows-11-10.0.26300-SP0",
+  "replayed": 314,
+  "revealed_outcomes": 304,
+  "pending_outcomes": 10,
+  "queue_reasons": {
+    "Data quality gate": 3,
+    "Process reference excursion": 5
+  },
+  "entity_evidence_checks": 314,
+  "model_risk_reviews": 0,
+  "observed_pass_yield": 0.944078947368421,
+  "docker_executed": false,
+  "power_bi_jmp_minitab_executed": false,
+  "scope": "Local CPU replay; source and frozen-artifact checks; no fab connection"
+}

@@ -1,0 +1,47 @@
+const $=s=>document.querySelector(s), pct=(v,d=1)=>v==null?'—':(100*v).toFixed(d)+'%', num=(v,d=3)=>Number(v).toFixed(d);
+const escapeHtml=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let timer=null,busy=false,editing=null,caseRows=[],modelData=null;
+async function api(path,options){const r=await fetch('/api/'+path,options);if(!r.ok)throw Error((await r.text()).slice(0,250));return r.json()}
+function reportError(e){$('#error').hidden=false;$('#error').textContent=e.message}
+function badge(s){return `<span class="badge ${escapeHtml(s)}">${escapeHtml(s)}</span>`}
+function outcome(v){return v==null?badge('pending'):badge(v?'fail':'pass')}
+function chart(target,values,{threshold=null,upper=[],lower=[],labels=true}={}){
+ const el=$(target), w=800,h=210,pad=30;
+ if(!values.length){el.innerHTML='<div class="empty">Start replay to populate the process trace.</div>';return}
+ const all=[...values,...upper,...lower,...(threshold==null?[]:[threshold])].filter(Number.isFinite), max=Math.max(.01,...all),min=Math.min(0,...all);
+ const xx=i=>pad+i*(w-2*pad)/Math.max(values.length-1,1), yy=v=>h-pad-(v-min)/(max-min||1)*(h-2*pad);
+ let svg=`<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Process trace"><title>Process trace over replay order</title>`;
+ for(let i=0;i<4;i++){let v=min+(max-min)*i/3;svg+=`<line x1="${pad}" y1="${yy(v)}" x2="${w-pad}" y2="${yy(v)}" stroke="#e9ece2"/><text x="0" y="${yy(v)+4}">${labels?pct(v,0):num(v,1)}</text>`}
+ if(threshold!=null)svg+=`<line x1="${pad}" x2="${w-pad}" y1="${yy(threshold)}" y2="${yy(threshold)}" stroke="#a87e38" stroke-dasharray="5 5"/>`;
+ for(let [series,color] of [[lower,'#b89559'],[upper,'#b89559'],[values,'#315a46']]){if(series.length)svg+=`<polyline points="${series.map((v,i)=>xx(i)+','+yy(v)).join(' ')}" fill="none" stroke="${color}" stroke-width="${series===values?2.1:1}"/>`}
+ svg+=`<text x="${pad}" y="${h-4}">1</text><text x="${w-pad-20}" y="${h-4}">${values.length}</text></svg>`;el.innerHTML=svg;
+}
+async function refresh(){
+ const d=await api('overview'),s=d.summary;$('#connection').textContent='API connected';$('#error').hidden=true;
+ $('#yield').textContent=pct(s.yield);$('#yield-detail').textContent=`${s.known} outcomes known · ${s.scored-s.known} pending`;
+ $('#scored').textContent=s.scored;$('#reviews').textContent=s.reviews;$('#holds').textContent=s.abstentions;
+ $('#progress-label').textContent=`${d.replay.cursor} / ${d.replay.total} records`;$('#progress').style.width=pct(d.replay.cursor/d.replay.total);
+ chart('#risk-chart',d.rows.map(r=>r.risk),{threshold:d.threshold>1?null:d.threshold});
+ $('.legend').innerHTML=d.threshold>1?'<i></i> Model risk · risk-review policy disabled':'<i></i> Model risk <b>┄</b> Review threshold';
+ $('#brief').textContent=s.scored?`${s.scored} records scored; ${s.reviews} risk reviews and ${s.abstentions} data quality holds. Observed pass yield uses only the ${s.known} revealed test outcomes. No process intervention or yield improvement is inferred.`:'Start replay to inspect the held-out production sequence.';
+ $('#ledger').innerHTML=d.rows.slice(-10).reverse().map(r=>`<tr data-id="${r.entity_id}" tabindex="0" role="button" aria-label="Inspect ${r.entity_id}"><td>${r.entity_id}</td><td>${escapeHtml(r.event_time.replace('T',' '))}</td><td>${pct(r.risk,2)}</td><td>${pct(1-r.missing_fraction)}</td><td>${badge(r.decision)}</td><td>${outcome(r.failed)}</td></tr>`).join('')||'<tr><td colspan="6" class="empty">No production records yet. Start historical replay above.</td></tr>';
+ caseRows=await api('investigations');$('#case-count').textContent=caseRows.length;
+ $('#cases').innerHTML=caseRows.map(r=>`<tr data-id="${r.entity_id}" tabindex="0" role="button" aria-label="Edit investigation ${r.entity_id}"><td>${r.entity_id}</td><td>${escapeHtml(r.reason)}</td><td>${pct(r.risk,2)}</td><td>${badge(r.status)}</td><td>${escapeHtml(r.owner)}</td><td>${outcome(r.failed)}</td></tr>`).join('')||'<tr><td colspan="6" class="empty">No reviews or data quality holds in the replayed records.</td></tr>';
+ if(!$('#quality').hidden)await loadQuality();
+ if(d.replay.cursor===d.replay.total&&timer)togglePlay();
+}
+async function step(){if(busy)return;busy=true;try{await api('replay/step?count=25',{method:'POST'});await refresh()}catch(e){reportError(e);if(timer)togglePlay()}finally{busy=false}}
+function togglePlay(){if(timer){clearInterval(timer);timer=null;$('#play').textContent='▶ Resume replay'}else{$('#play').textContent='Ⅱ Pause replay';step();timer=setInterval(step,1800)}}
+$('#step').onclick=step;$('#play').onclick=togglePlay;
+const titles={overview:['A clearer view of process risk.','Screen production records, track outcomes, and focus the next investigation.'],investigations:['Turn signals into engineering action.','Assign ownership, record evidence, and preserve a traceable investigation history.'],quality:['Trust the measurements first.','Inspect completeness and process excursions against frozen training references.'],model:['Make every result inspectable.','Chronological evaluation, explicit costs, and transparent limitations.']};
+document.querySelectorAll('nav button').forEach((b,i)=>b.onclick=async()=>{document.querySelectorAll('.view').forEach(v=>v.hidden=v.id!==b.dataset.view);document.querySelectorAll('nav button').forEach(n=>n.classList.toggle('active',n===b));$('#view-title').textContent=titles[b.dataset.view][0];$('#view-description').textContent=titles[b.dataset.view][1];$('#view-number').textContent='0'+(i+1);try{if(b.dataset.view==='quality')await loadQuality();if(b.dataset.view==='model')await loadModel()}catch(e){reportError(e)}});
+async function showEntity(id){try{const d=await api('entity/'+encodeURIComponent(id));$('#detail-title').textContent=id;$('#detail-body').innerHTML=`<table><thead><tr><th>SIGNAL</th><th>MEASURED</th><th>TRAIN MEDIAN</th><th>DEVIATION / SD</th></tr></thead><tbody>${d.evidence.map(e=>`<tr><td>${e.sensor}</td><td>${e.value==null?'Missing':num(e.value)}</td><td>${num(e.reference)}</td><td>${e.z==null?'—':num(e.z,2)}</td></tr>`).join('')}</tbody></table>`;$('#audit').innerHTML=d.audit.map(a=>`<p>${escapeHtml(a.created_at)} · <strong>${escapeHtml(a.action)}</strong> · ${escapeHtml(a.detail)}</p>`).join('');$('#detail').showModal()}catch(e){reportError(e)}}
+$('#close-detail').onclick=()=>$('#detail').close();
+function rowHandler(container,fn){$(container).addEventListener('click',e=>{const r=e.target.closest('tr[data-id]');if(r)fn(r.dataset.id)});$(container).addEventListener('keydown',e=>{if(e.key==='Enter'){const r=e.target.closest('tr[data-id]');if(r)fn(r.dataset.id)}})}
+rowHandler('#ledger',showEntity);rowHandler('#cases',id=>{editing=id;const c=caseRows.find(x=>x.entity_id===id);$('#case-editor').hidden=false;$('#editing-id').textContent=id;$('#status').value=c.status;$('#owner').value=c.owner;$('#note').value=c.note;$('#save-message').textContent='';$('#case-editor').scrollIntoView({behavior:'smooth'})});
+$('#save-case').onclick=async()=>{try{await api('investigations/'+editing,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:$('#status').value,owner:$('#owner').value,note:$('#note').value})});$('#save-message').textContent='Saved to audit history.';await refresh()}catch(e){reportError(e)}};
+async function loadQuality(){const d=await api('quality');$('#gate-note').textContent=`Abstain above ${pct(d.missing_limit)} missing measurements. This gate is a separate operational safeguard.`;$('#quality-rows').innerHTML=d.sensors.sort((a,b)=>b.missing_fraction-a.missing_fraction).slice(0,20).map(r=>`<tr><td>${r.sensor}</td><td>${pct(r.missing_fraction)}</td><td>${pct(r.training_missing_fraction)}</td><td>${r.training_distinct}</td><td>${num(r.training_effect_abs)}</td></tr>`).join('');$('#spc-title').textContent='EWMA · '+d.spc.sensor;$('#spc-note').textContent=d.note;chart('#spc-chart',d.spc.points.map(p=>p.value),{upper:d.spc.points.map(p=>p.upper),lower:d.spc.points.map(p=>p.lower),labels:false})}
+async function loadModel(){const d=modelData||await api('model');modelData=d;$('#model-kpis').innerHTML=[['TEST AVERAGE PRECISION',num(d.test.ap),'Test prevalence '+pct(d.splits.test.fails/d.splits.test.n)],['FAILURE RECALL',pct(d.test.recall),`${d.test.tp} detected · ${d.test.fn} missed`],['REVIEW PRECISION',pct(d.test.precision),`${d.test.fp} false reviews`],['WARM SCORING P95',num(d.latency_ms.p95,1)+' ms','Pipeline only · excludes HTTP / SQL']].map(([a,b,c])=>`<article><p>${a}</p><strong>${b}</strong><small>${c}</small></article>`).join('');$('#models').innerHTML=d.candidates.map(r=>`<tr><td>${r.name===d.winner.name?'✓ ':''}${r.name}</td><td>${num(r.policy_ap)}</td><td>${num(r.policy_brier)}</td><td>${r.calibrated?'Yes':'No'}</td></tr>`).join('');$('#splits').innerHTML=Object.entries(d.splits).map(([k,v])=>`<div><strong>${k.toUpperCase()}</strong><span>${v.n} entities / ${v.fails} failures</span></div>`).join('');$('#model-summary').textContent=`Selected model: ${d.winner.name}. Test AP ${num(d.test.ap)}; ROC AUC ${num(d.test.roc_auc)}. Hypothetical cost ${num(d.test.cost_per_100,1)} / 100 entities versus ${num(d.all_pass.cost_per_100,1)} for pass-all. A model result is not evidence of improved manufacturing yield.`}
+refresh().catch(reportError);
+document.querySelectorAll('nav button').forEach(button=>button.addEventListener('click',()=>window.scrollTo({top:0,behavior:'instant'})));
+setInterval(()=>{if(!busy)refresh().catch(reportError)},5000);
