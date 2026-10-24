@@ -5,7 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.12%2B-234b3c)
 ![FastAPI](https://img.shields.io/badge/API-FastAPI-234b3c)
 ![SQL](https://img.shields.io/badge/Warehouse-SQLite-956621)
-![Tests](https://img.shields.io/badge/Local_tests-29_passed-234b3c)
+![Tests](https://img.shields.io/badge/Local_tests-33_passed-234b3c)
 ![Scope](https://img.shields.io/badge/Scope-Independent_portfolio-717873)
 
 Manufacturing engineers need to connect incomplete process signals with test outcomes, consistent KPIs, and accountable follow-up. FabWatch implements that workflow with real public semiconductor records, a local ingestion API, frozen statistical/ML pipelines, a SQL warehouse, and an engineering dashboard.
@@ -91,18 +91,22 @@ Seven additional candidates were selected using original development data only; 
 - **3** missingness abstentions; **5** reference excursions; **8** investigation entries.
 - The five reference excursions corresponded to revealed passing entities: they are **not demonstrated failure detections**.
 - **314** per-entity evidence endpoints reconciled.
-- **29** local automated tests passed, covering temporal separation, train-only preprocessing, frozen prediction parity, invalid inputs, idempotency, delayed labels, restart recovery, SQL exports, safe CSV notes, and full replay.
+- **33** local automated tests passed, covering temporal separation, train-only preprocessing, frozen prediction parity, invalid inputs, idempotency, delayed labels, restart recovery, SQL exports, safe CSV notes, and full replay.
 
 ![Chronological evaluation curves and confusion matrix](reports/evaluation.png)
 
 ## Explore the interface
 
+The redesigned engineering workspace keeps charts and evidence linked. Compare two or three pinned entities, inspect a signal in raw or EWMA mode, pan 50/100-record windows, filter failed/pending/review records, and export the active selection. Replay supports 1/10/25 records per tick, pause, new warehouses, and restoring preserved sessions. Polling updates the displayed records every four seconds; this is a local replay/ingestion workbench, not a live fab feed.
+
+[Interface research and interaction design](docs/INTERFACE_DESIGN.md)
+
 | View | What an engineer can inspect |
 |---|---|
-| Operations | Revealed-outcome yield, pending outcomes, risk trace, entity ledger |
-| Investigations | Review reasons, outcomes, ownership, status, evidence notes |
-| Data & process health | Signal completeness, missingness contract, EWMA reference trace |
-| Model evidence | Original candidate selection, time partitions, errors and limitations |
+| Process workbench | Selectable signals, normalized/raw/EWMA traces, movable windows, linked risk and fingerprint views, searchable ledger |
+| Review queue | Reason/owner filters, open/investigating/resolved lanes, manual case creation, evidence inspector, auditable handoffs |
+| Data contracts | Searchable 590-signal inventory, training/source completeness, one-click plot actions, ingestion contract |
+| Model lab | Candidate comparison, time partitions, model status, error counts and evaluation curves |
 
 ![Engineering process health](docs/media/quality.png)
 

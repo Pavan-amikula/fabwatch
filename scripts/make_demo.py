@@ -56,10 +56,12 @@ def main():
         ('quality.png','06 / Data contracts and process monitoring','Signal completeness + exploratory EWMA. No physical root causes or specification limits invented.',6),
         ('model-evidence.png','07 / Inspect model evidence and limitations','The original chronological model is weak; risk alerts remain disabled under its selected policy.',7),
         ('entity-evidence.png','08 / Inspect an entity and its audit history','Reference deviations support investigation; they do not establish causal attribution.',6),
-        ('entity-audit.png','09 / Trace the engineering handoff','The saved owner, status, and note remain inspectable alongside the original scoring event.',5)]:
+        ('entity-audit.png','09 / Trace the engineering handoff','The saved owner, status, and note remain inspectable alongside the original scoring event.',5),
+        ('comparison.png','10 / Compare records side by side','Pin two or three entities; compare measurements, reference deviations, risk, and known outcomes.',7),
+        ('ewma.png','11 / Move the window and inspect EWMA','The selected chronological window stays linked to the ledger, risk trace, and process fingerprint.',7)]:
         shots.append((frame(file,title,caption),seconds))
     shots.append((card('Reproducible evidence, accountable decisions',[
-        '29 automated tests / 314 entity-evidence checks',
+        '33 automated tests / 314 entity-evidence checks',
         'Source and model fingerprints / SQL KPIs / reporting exports',
         'No demonstrated production yield improvement; future/site validation required']),4))
     cmd=[imageio_ffmpeg.get_ffmpeg_exe(),'-y','-f','rawvideo','-vcodec','rawvideo','-s',f'{W}x{H}',

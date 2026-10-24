@@ -5,6 +5,7 @@ import json
 import os
 import threading
 import time
+import uuid
 from datetime import datetime
 from typing import Literal
 import joblib
@@ -42,6 +43,11 @@ class CaseUpdate(BaseModel):
     note: str = Field(max_length=2000)
 
 
+class SessionSelect(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    session: str = Field(pattern=r'^[A-Za-z0-9_-]{1,100}$')
+
+
 def create_app(db_path=None):
     app = FastAPI(title='FabWatch', version='1.0.0', description='Local manufacturing analytics demonstration. Replay is historical, not a factory connection.')
 
@@ -63,7 +69,19 @@ def create_app(db_path=None):
     # Only a contiguous prefix is accepted as a replay checkpoint.
     if any(meta.iloc[i].entity_id not in seen for i in test_ids[:cursor]):
         raise RuntimeError('Replay checkpoint is not contiguous; use a fresh database')
-    state = {'cursor': cursor, 'delay': 10}
+    state = {'cursor': cursor, 'delay': 10, 'session':store.path.stem}
+    sessions = {store.path.stem:store.path}
+    sessions.update({path.stem:path for path in store.path.parent.glob('session-*.db')})
+    training = x.iloc[partitions(meta)['train']]
+    quality_frame = pd.read_csv(REPORT / 'sensor_quality.csv')
+    signal_catalog = []
+    for i, sensor in enumerate(x.columns):
+        record = quality_frame.iloc[i].to_dict()
+        mean = training[sensor].mean()
+        record.update({'mean':None if pd.isna(mean) else float(mean),
+                       'median':float(bundle['train_median'][i]), 'sd':float(bundle['train_std'][i]),
+                       'reference_signal':sensor in bundle['investigation_sensors']})
+        signal_catalog.append(record)
     # Recover any delayed outcomes interrupted between scoring and revelation.
     for offset in range(max(0,cursor-state['delay'])):
         record = meta.iloc[test_ids[offset]]
@@ -91,7 +109,76 @@ def create_app(db_path=None):
                 'evidence': evidence, 'reference_excursion':excursion, 'interpretation': 'Training associations and standardized deviations; no causal attribution.'}
 
     @app.get('/api/health')
-    def health(): return {'status':'ready','model_sha256':metrics['model_sha256'],'mode':'historical replay + local JSON ingress'}
+    def health(): return {'status':'ready','model_sha256':metrics['model_sha256'],'mode':'historical replay + local JSON ingress','session':state['session']}
+
+    @app.get('/api/signals')
+    def signals():
+        return {'signals':signal_catalog,'suggested':bundle['investigation_sensors'],
+                'reference_scope':'training partition only; anonymous signals, no physical units'}
+
+    @app.get('/api/analysis')
+    def analysis(signals: str = '', limit: int = 1000):
+        chosen = list(dict.fromkeys(signals.split(','))) if signals else bundle['investigation_sensors'][:3]
+        if len(chosen)>16 or any(sensor not in bundle['columns'] for sensor in chosen):
+            raise HTTPException(422,'Select 1 to 16 known sensor IDs')
+        if not 1 <= limit <= 1000: raise HTTPException(422,'limit must be between 1 and 1000')
+        indexes = [bundle['columns'].index(sensor) for sensor in chosen]
+        with lock:
+            rows = store.rows('''SELECT e.entity_id,e.event_time,e.measurements,e.missing_fraction,
+                p.risk,p.decision,p.latency_ms,o.failed,i.reason,i.status,i.owner
+                FROM entities e JOIN predictions p USING(entity_id) LEFT JOIN outcomes o USING(entity_id)
+                LEFT JOIN investigations i USING(entity_id) ORDER BY e.event_time DESC,e.entity_id DESC LIMIT ?''',(limit,))
+            for row in rows:
+                values = json.loads(row.pop('measurements'))
+                row['signals'] = {sensor:values[index] for sensor,index in zip(chosen,indexes)}
+            rows.reverse()
+            for sensor,index in zip(chosen,indexes):
+                mean = signal_catalog[index]['mean']
+                mean = signal_catalog[index]['median'] if mean is None else mean
+                points = iter(ewma([row['signals'][sensor] for row in rows],mean,signal_catalog[index]['sd']))
+                for row in rows:
+                    row.setdefault('ewma',{})[sensor] = None if row['signals'][sensor] is None else next(points)
+            return {'rows':rows,'signals':[signal_catalog[index] for index in indexes],
+                    'session':state['session'],'model_risk_alerts_enabled':bundle['threshold']<=1,
+                    'latest_event':rows[-1]['event_time'] if rows else None,
+                    'served_at':datetime.now().astimezone().isoformat(),
+                    'reference_scope':'training median and SD; excursions are investigation clues'}
+
+    @app.post('/api/replay/new')
+    def new_replay():
+        nonlocal store
+        with lock:
+            previous = state['session']
+            name = 'session-'+uuid.uuid4().hex[:12]
+            # Preserve every prior warehouse; a new session never deletes its predecessor.
+            store = Store(store.path.parent / (name+'.db'))
+            sessions[name] = store.path
+            state.update({'cursor':0,'session':name})
+            app.state.store = store
+            return {'session':name,'previous_session':previous,'previous_preserved':True,'cursor':0}
+
+    @app.get('/api/replay/sessions')
+    def replay_sessions():
+        with lock:
+            return [{'session':name,'current':name==state['session']} for name in sessions]
+
+    @app.post('/api/replay/select')
+    def select_session(body: SessionSelect):
+        nonlocal store
+        with lock:
+            if body.session not in sessions: raise HTTPException(404,'Unknown replay session')
+            restored = Store(sessions[body.session])
+            restored_ids = {row['entity_id'] for row in restored.rows('SELECT entity_id FROM entities')}
+            restored_cursor = sum(meta.iloc[i].entity_id in restored_ids for i in test_ids)
+            if any(meta.iloc[i].entity_id not in restored_ids for i in test_ids[:restored_cursor]):
+                raise HTTPException(409,'Non-contiguous replay checkpoint')
+            store = restored; app.state.store = store
+            state.update({'cursor':restored_cursor,'session':body.session})
+            for offset in range(max(0,restored_cursor-state['delay'])):
+                record = meta.iloc[test_ids[offset]]
+                reveal_time = meta.iloc[test_ids[offset+state['delay']]].timestamp.isoformat()
+                store.reveal(record.entity_id,int(record.failed),reveal_time)
+            return {'session':body.session,'cursor':restored_cursor}
 
     @app.get('/api/model')
     def model(): return metrics
@@ -122,6 +209,10 @@ def create_app(db_path=None):
 
     @app.get('/api/overview')
     def overview():
+        with lock:
+            return overview_snapshot()
+
+    def overview_snapshot():
         rows = store.rows('''SELECT e.entity_id,e.event_time,e.missing_fraction,p.risk,p.decision,p.latency_ms,o.failed
                              FROM entities e JOIN predictions p USING(entity_id) LEFT JOIN outcomes o USING(entity_id)
                              ORDER BY e.event_time,e.entity_id''')
@@ -130,7 +221,7 @@ def create_app(db_path=None):
                 'summary': {'scored':len(rows),'known':len(known),'yield':sum(1-r['failed'] for r in known)/len(known) if known else None,
                             'reviews':sum(r['decision']=='review' for r in rows), 'abstentions':sum(r['decision']=='abstain' for r in rows),
                             'missing':float(np.mean([r['missing_fraction'] for r in rows])) if rows else 0},
-                'replay':{'cursor':state['cursor'],'total':len(test_ids),'delay':state['delay']},
+                'replay':{'cursor':state['cursor'],'total':len(test_ids),'delay':state['delay'],'session':state['session']},
                 'threshold':bundle['threshold']}
 
     @app.get('/api/investigations')
@@ -142,12 +233,23 @@ def create_app(db_path=None):
         rows = store.rows('SELECT * FROM entities WHERE entity_id=?',(entity_id,))
         if not rows: raise HTTPException(404,'Unknown entity')
         row = rows[0]; values = json.loads(row.pop('measurements'))
-        return {**row,'evidence':explain(bundle,values),'audit':store.rows('SELECT action,detail,created_at FROM audit WHERE entity_id=? ORDER BY id',(entity_id,))}
+        return {**row,'evidence':explain(bundle,values),
+                'prediction':store.rows('SELECT * FROM predictions WHERE entity_id=?',(entity_id,))[0],
+                'outcome':store.rows('SELECT * FROM outcomes WHERE entity_id=?',(entity_id,)),
+                'investigation':store.rows('SELECT * FROM investigations WHERE entity_id=?',(entity_id,)),
+                'audit':store.rows('SELECT action,detail,created_at FROM audit WHERE entity_id=? ORDER BY id',(entity_id,))}
 
     @app.patch('/api/investigations/{entity_id}')
     def update(entity_id: str, body: CaseUpdate):
         if not store.update_case(entity_id,body.status,body.owner,body.note): raise HTTPException(404,'Unknown investigation')
         return {'saved':True}
+
+    @app.post('/api/investigations/{entity_id}')
+    def open_review(entity_id: str):
+        with lock:
+            created = store.open_case(entity_id)
+            if created is None: raise HTTPException(404,'Unknown entity')
+            return {'created':created}
 
     @app.get('/api/quality')
     def quality():

@@ -35,9 +35,24 @@ The catalog lists 591 features, while the actual numeric matrix contains 590 sen
 9. **Engineering workflow:** dashboard with operations, investigation queue, data/process health, and model evidence; owner/status/notes editing; audit history; CSV handoff and a KPI dictionary.
 10. **Verification and communication:** automated tests, reproducible CI configuration, measured operational replay, desktop browser verification, screenshots, a captioned video walkthrough, and full documentation.
 
+## Updated engineering interface
+
+The interface was redesigned after reviewing Seeq Workbench, Cognite Industrial Canvas, Siemens Insights Hub documentation, and Tulip workflow references. It uses a horizontal engineering toolbar, a searchable signal explorer, a linked analysis canvas, and a persistent evidence inspector. The implementation is original; no third-party UI assets or source code were copied.
+
+- Select up to three signals from a 590-signal catalog and compare training-standardized traces.
+- Switch to raw measurement or EWMA mode; inspect frozen training references and time-dependent EWMA bands.
+- Pan 50/100-record windows, follow latest arrivals, or inspect the complete operational record sequence.
+- Click trace columns, fingerprint cells, or ledger rows to inspect the same selected entity.
+- Pin two or three entities for a side-by-side comparison of sensor values, reference deviations, outcomes, risk, and review status.
+- Search/filter/sort/paginate the ledger and export the matching records with selected signal values.
+- Filter an open/investigating/resolved review board by owner or reason; create a manual engineering review even when the model generated no alert.
+- Save owner, status, and evidence notes to the SQL audit history. Polling preserves unsaved note drafts.
+- Control replay speed, pause, and create/restore separate persisted warehouses. Starting a new session does not delete the previous database.
+- Inspect source-event time separately from current connection freshness and the synthetic label delay.
+
 ## Verified outcomes
 
-- 29 local automated tests passed.
+- 33 local automated tests passed.
 - Complete replay: 314 entities scored, 304 outcomes revealed, 10 pending by the declared delay.
 - Three missingness holds and five process-reference excursions created eight traceable investigation cases.
 - The five excursions corresponded to passing records: they are diagnostic follow-up triggers, not demonstrated failure detections.
@@ -60,15 +75,19 @@ Choose two or three based on space:
 - Built a semiconductor manufacturing analytics workbench using Python, scikit-learn, FastAPI, and SQL, integrating 590-signal process records with quality validation, failure-risk screening, and engineering investigation workflows.
 - Implemented chronological train/calibration/policy/test separation, train-only preprocessing, rare-event evaluation, cost-sensitive thresholds, and day-block bootstrap analysis; documented weak generalization and retained the original frozen model evidence.
 - Developed an auditable SQLite pipeline with idempotent ingestion, delayed outcome tracking, standardized yield KPIs, missingness abstention, exploratory EWMA monitoring, and owner/status-based investigation handoffs.
-- Verified a 314-entity historical replay and 314 entity-evidence responses; passed 29 automated tests covering data contracts, temporal separation, frozen prediction parity, conflict handling, recovery, and reporting.
+- Verified a 314-entity historical replay and 314 entity-evidence responses; passed 33 automated tests covering data contracts, temporal separation, frozen prediction parity, conflict handling, recovery, and reporting.
 
 Optional research-specific bullet, only with its qualifier intact:
 
 - Evaluated seven additional development-selected ML challengers; an exploratory random forest achieved AP 0.111 and ROC AUC 0.663 on a reused historical test period, with new future/site validation identified as the next model-promotion requirement.
 
+Additional interface-focused résumé bullet:
+
+- Developed an interactive process-analysis workbench with selectable sensor overlays, raw/EWMA views, linked process fingerprints, movable analysis windows, side-by-side entity comparison, filtered review queues, and preserved replay sessions.
+
 ## Relevant keywords supported by implementation
 
-Engineering data analysis; semiconductor manufacturing analytics; failure-risk modeling; yield analytics; statistical process monitoring; EWMA; anomaly-reference baselines; rare-event classification; class imbalance; calibration; precision-recall; Brier score; chronological validation; data quality; missing-data handling; root cause investigation support; KPI standardization; Python; pandas; NumPy; SciPy; scikit-learn; SQL; SQLite; FastAPI; REST API; Pydantic; automated reporting; data visualization; data provenance; reproducibility; pytest; GitHub Actions; engineering handoff; audit trail.
+Interactive process analytics; time-series visualization; engineering investigation workflows; engineering data analysis; semiconductor manufacturing analytics; failure-risk modeling; yield analytics; statistical process monitoring; EWMA; anomaly-reference baselines; rare-event classification; class imbalance; calibration; precision-recall; Brier score; chronological validation; data quality; missing-data handling; root cause investigation support; KPI standardization; Python; pandas; NumPy; SciPy; scikit-learn; SQL; SQLite; FastAPI; REST API; Pydantic; automated reporting; data visualization; data provenance; reproducibility; pytest; GitHub Actions; engineering handoff; audit trail.
 
 ## Terms requiring qualification
 

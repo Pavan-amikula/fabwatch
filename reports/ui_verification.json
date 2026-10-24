@@ -1,0 +1,22 @@
+{
+  "scope": "Manual Chromium browser checks of the local engineering workbench",
+  "automated_pytest_cases": 33,
+  "checks": {
+    "two_entity_comparison": "Passed: SECOM-1566 and SECOM-1564; measurements and pending outcomes visible",
+    "analysis_window_navigation": "Passed: 1-50 of 314; Follow latest unchecked on navigation",
+    "ewma_mode": "Passed: one-signal mode with time-dependent training-reference bands",
+    "review_reason_filter": "Passed: data quality filter returned three input-hold cases",
+    "data_contract_inventory": "Passed: searchable catalog and training/source missingness columns rendered",
+    "model_evidence": "Passed: original frozen model findings and temporal partitions rendered",
+    "new_replay_session": "Passed: separate warehouse created; original warehouse retained",
+    "running_replay": "Passed: 25-record batches reached 314, with 304 outcomes revealed and 10 pending",
+    "manual_review": "Passed: SECOM-1519 revealed failure opened as Engineer review in demonstration warehouse",
+    "handoff_persistence": "Passed: Product Engineering owner, investigating status, and verification note saved to audit history",
+    "session_restore": "Original video-final warehouse selected after the demonstration"
+  },
+  "boundaries": [
+    "These are local functional checks, not industrial validation or proof of model utility.",
+    "The new manual demonstration case is separate from the eight automatically generated cases.",
+    "No new predictive performance or manufacturing yield improvement is claimed."
+  ]
+}

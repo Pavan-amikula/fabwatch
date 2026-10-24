@@ -76,3 +76,12 @@ class Store:
             if cursor.rowcount == 0: return False
             db.execute('INSERT INTO audit(entity_id,action,detail) VALUES(?,?,?)', (entity_id,'case_updated',json.dumps({'status':status,'owner':owner,'note':note})))
             return True
+
+    def open_case(self, entity_id):
+        with self.connect() as db:
+            if not db.execute('SELECT 1 FROM entities WHERE entity_id=?',(entity_id,)).fetchone():
+                return None
+            created = db.execute("INSERT OR IGNORE INTO investigations(entity_id,reason) VALUES(?,'Engineer review')",(entity_id,)).rowcount == 1
+            if created:
+                db.execute('INSERT INTO audit(entity_id,action,detail) VALUES(?,?,?)',(entity_id,'review_opened','Engineer review'))
+            return created

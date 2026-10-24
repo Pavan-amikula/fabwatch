@@ -62,6 +62,12 @@ Or `docker compose up --build`, then open `http://127.0.0.1:8000`. The compose p
 | PATCH `/api/investigations/{id}` | Assign owner, status, note |
 | GET `/api/quality` | Signal audit and EWMA |
 | GET `/api/model` | Full offline experiment evidence |
+| GET `/api/signals` | Searchable training-reference sensor catalog |
+| GET `/api/analysis?signals=sensor_059,sensor_021` | Ingested-only measurements and EWMA for selected sensors |
+| POST `/api/investigations/{id}` | Idempotent manual engineering review creation |
+| POST `/api/replay/new` | Start a separate warehouse while preserving the current file |
+| GET `/api/replay/sessions` | List available local replay warehouses |
+| POST `/api/replay/select` | Restore a named preserved warehouse and checkpoint |
 | GET `/api/export/kpis` | Daily warehouse KPIs CSV |
 | GET `/api/export/investigations` | Queue CSV |
 | GET `/api/export/audit` | Audit CSV |
@@ -82,3 +88,9 @@ print(requests.post('http://127.0.0.1:8768/api/predict', json=payload).json())
 ## Local demonstration scope
 
 No authentication, RBAC, multi-tenancy, or remote exposure is configured. Bind localhost. A real deployment requires identity, authorization, HTTPS, backup/retention, source availability contracts, and an approved model-monitoring and human review process. The app never writes process setpoints or releases products. Input errors omit raw request data, and the browser escapes user notes before display.
+
+## Workbench interaction boundaries
+
+Analysis responses contain only ingested records and already revealed outcomes. Catalog references use training data. EWMA uses the returned chronological sequence with training-mean initialization; the current application fetches up to 1,000 operational records. The fingerprint shows the latest 80 entities in the selected window. The normalized trace viewport is capped at 12 SD; inspector bars are capped at 6 SD while numeric evidence retains its own documented bounds.
+
+Replay sessions are local warehouses shared by the running single-worker service. New-session creation preserves the prior file; session selection validates known IDs and reconstructs a contiguous checkpoint. The starting database remains controlled by FABWATCH_DB after a process restart; preserved session files can then be selected in the UI. This is not authenticated multi-user session isolation.

@@ -9,6 +9,9 @@ The video is a captioned walkthrough assembled from actual screenshots captured 
 5. **Process health:** inspect signal missingness and EWMA against training references. Sensor semantics are unknown, so the interface avoids physical cause claims.
 6. **Model evidence:** inspect separate time partitions, candidate metrics, and the weak original test result. The exploratory challenger is documented separately in the repository and has not been promoted.
 7. **Entity evidence:** open reference deviations and the audit trail for the saved demonstration case.
-8. **Conclusion:** 314 entities replayed; 29 automated tests; reproducible reports; human review remains central. No production yield improvement is claimed.
+8. **Comparison and windowing:** compare pinned records and inspect a moved 50-record window in EWMA mode.
+9. **Conclusion:** 314 entities replayed; 33 automated tests; reproducible reports; human review remains central. No production yield improvement is claimed.
+
+The redesigned review-board footage includes a manually opened review of a revealed failure, bringing that demonstration warehouse to nine cases. The automatic replay still creates eight cases (three missingness holds and five reference excursions). The original warehouse is preserved and restored after the interaction checks.
 
 The GIF provides an animated preview of actual replay snapshots. See `reports/verification.json` for machine-readable replay outcomes and `docs/METHODS.md` for evaluation boundaries.
